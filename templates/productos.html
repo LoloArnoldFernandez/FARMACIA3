@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+    <h1 class="mt-5">Productos</h1>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="/agregar_producto" class="btn btn-primary">Agregar Producto</a>
+    </div>
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Buscar Producto" id="searchInput">
+        <button class="btn btn-outline-secondary" type="button" id="searchButton">Buscar</button>
+    </div>
+
+    <table class="table mt-4">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto[0] }}</td>
+                <td>{{ producto[1] }}</td>
+                <td>{{ producto[2] }}</td>
+                <td>{{ producto[3] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
