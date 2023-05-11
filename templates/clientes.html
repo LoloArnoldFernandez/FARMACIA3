@@ -7,10 +7,12 @@
     <div class="d-flex justify-content-end mb-3">
         <a href="/agregar_cliente" class="btn btn-primary">Agregar Cliente</a>
     </div>
-    <div class="input-group mb-3">
-        <input type="text" name="buscar_cliente" class="form-control" placeholder="Buscar cliente" id="searchInput">
-        <button class="btn btn-outline-secondary" type="button" id="searchButton">Buscar</button>
-    </div>
+    <form action="/buscar_cliente" method="POST" class="mb-3">
+        <div class="input-group">
+            <input type="text" class="form-control" name="busqueda" placeholder="Buscar cliente...">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
     <table class="table mt-4">
         <thead>
             <tr>
@@ -40,7 +42,7 @@
             {% endfor %}
         </tbody>
     </table>
-    {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul class="flash-messages">
                 {% for message in messages %}

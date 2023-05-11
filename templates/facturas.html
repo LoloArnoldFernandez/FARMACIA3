@@ -20,6 +20,7 @@
                 <th>Sucursal</th>
                 <th>Fecha</th>
                 <th>Total</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -30,9 +31,17 @@
                 <td>{{ factura[2] }}</td>
                 <td>{{ factura[3] }}</td>
                 <td>{{ factura[4] }}</td>
+                <td>
+                    <a href="/generar_pdf/{{ factura[0] }}" class="btn btn-primary">Descargar</a>
+                    <a href="/editar_factura/{{ factura[0] }}" class="btn btn-primary btn-sm">Editar</a>
+                    <form action="/eliminar_factura/{{ factura[0] }}" method="post" style="display:inline">
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 {% endblock %}
+
 
