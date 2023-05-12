@@ -42,7 +42,7 @@
             {% endfor %}
         </tbody>
     </table>
-        {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul class="flash-messages">
                 {% for message in messages %}
@@ -52,8 +52,6 @@
         {% endif %}
     {% endwith %}
 {% endblock %}
-
-
 
 
 

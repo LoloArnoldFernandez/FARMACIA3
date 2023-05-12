@@ -7,7 +7,8 @@
     <form action="/agregar_producto" method="POST">
         <div class="mb-3">
             <label for="nombre" class="form-label">Nombre</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" required>
+            <input type="text" class="form-control" id="nombre" name="nombre" pattern="[A-Za-z\s]+" required>
+            <small>Solo se permiten letras y espacios.</small>
         </div>
         <div class="mb-3">
             <label for="precio" class="form-label">Precio</label>
@@ -18,6 +19,12 @@
             <input type="number" class="form-control" id="stock" name="stock" required>
         </div>
         <button type="submit" class="btn btn-primary">Agregar</button>
+        <a href="/productos" class="btn btn-secondary">Cancelar</a>
     </form>
-{% endblock %}
 
+    <script>
+        document.getElementById('nombre').addEventListener('input', function() {
+            this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+        });
+    </script>
+{% endblock %}

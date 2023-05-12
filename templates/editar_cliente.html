@@ -7,22 +7,53 @@
     <form method="POST" action="/editar_cliente/{{ cliente[0] }}">
         <div class="form-group">
             <label for="nombre">Nombre:</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ cliente[1] }}" required>
+            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ cliente[1] }}" pattern="[A-Za-z ]+" required>
+            <small>Solo se permiten letras y espacios.</small>
         </div>
         <div class="form-group">
             <label for="direccion">Dirección:</label>
             <input type="text" class="form-control" id="direccion" name="direccion" value="{{ cliente[2] }}" required>
+            <small>Ingrese una dirección válida.</small>
         </div>
         <div class="form-group">
             <label for="telefono">Teléfono:</label>
-            <input type="text" class="form-control" id="telefono" name="telefono" value="{{ cliente[3] }}" required>
+            <input type="text" class="form-control" id="telefono" name="telefono" value="{{ cliente[3] }}" pattern="[0-9]{9}" required>
+            <small>Solo se permite un número de 9 dígitos.</small>
         </div>
         <div class="form-group">
             <label for="correo">Correo:</label>
             <input type="email" class="form-control" id="correo" name="correo" value="{{ cliente[4] }}" required>
+            <small>Ingrese un correo electrónico válido.</small>
         </div>
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
         <a href="/clientes" class="btn btn-secondary">Cancelar</a>
     </form>
-{% endblock %}
 
+    <script>
+        document.getElementById('nombre').addEventListener('input', function() {
+            this.value = this.value.replace(/[^A-Za-z ]/g, '');
+        });
+
+        document.getElementById('telefono').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        document.getElementById('direccion').addEventListener('input', function() {
+            const regex = /^[a-zA-Z0-9\s,.-]*$/;
+            if (!regex.test(this.value)) {
+                this.setCustomValidity('Ingrese una dirección válida.');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+
+        document.getElementById('correo').addEventListener('input', function() {
+            const regex = /^\S+@\S+\.\S+$/;
+            if (!regex.test(this.value)) {
+                this.setCustomValidity('Ingrese un correo electrónico válido.');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+{% endblock %}

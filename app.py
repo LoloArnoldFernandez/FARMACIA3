@@ -4,6 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 import sqlite3
 import pdfkit
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from io import BytesIO
 app = Flask(__name__)
 app.secret_key = '040518'
@@ -76,6 +79,14 @@ def obtener_facturas():
     conn.close()
     return facturas
 
+#dar producto
+def dar_productos(producto_id):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM productos WHERE id = ?', (producto_id,))
+    productos = cursor.fetchone()
+    conn.close()
+    return productos
 
 #dar facturas
 def dar_facturas(factura_id):
@@ -162,6 +173,15 @@ def encontrar_clientes(busqueda):
     clientes = cursor.fetchall()
     conn.close()
     return clientes
+#encontrar clientes
+def encontrar_facturas(busqueda):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM facturas WHERE id LIKE ? OR fecha LIKE ?', ('%' + busqueda + '%', '%' + busqueda + '%'))
+    facturas = cursor.fetchall()
+    conn.close()
+    return facturas
+
 def obtener_productos():
     conn = sqlite3.connect('farmacia.db')
     cursor = conn.cursor()
@@ -215,6 +235,13 @@ def buscar_cliente():
     busqueda = request.form['busqueda']
     clientes = encontrar_clientes(busqueda)  # Función para buscar clientes en la base de datos
     return render_template('clientes.html', active='clientes', clientes=clientes)
+#ruta de buscar facturas
+@app.route('/buscar_factura', methods=['POST'])
+def buscar_factura():
+    busqueda = request.form['busqueda']
+    facturas = encontrar_facturas(busqueda)  # Función para buscar facturas en la base de datos
+    return render_template('facturas.html', active='facturas', facturas=facturas)
+
 
 # Ruta para editar un cliente
 @app.route('/editar_cliente/<int:cliente_id>', methods=['GET', 'POST'])
@@ -280,7 +307,12 @@ def editar_producto(producto_id):
         flash('Producto actualizado correctamente', 'success')
         return redirect('/productos')
     else:
-        producto = obtener_producto(producto_id)  # Función para obtener el producto de la base de datos
+        conn = sqlite3.connect('farmacia.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM productos WHERE id = ?', (producto_id,))
+        producto = cursor.fetchone()
+        conn.close()
+        #producto = dar_productos(producto_id)  # Función para obtener el producto de la base de datos
         if producto:
             return render_template('editar_producto.html', producto=producto)
         else:
@@ -327,29 +359,53 @@ def generar_pdf(factura_id):
     # Crear un objeto de BytesIO para almacenar el PDF
     buffer = BytesIO()
 
-    # Crear un objeto de lienzo (canvas) para el PDF
-    p = canvas.Canvas(buffer)
+    # Crear el documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
 
-    # Agregar contenido al PDF
-    p.setFont("Helvetica", 12)
-    p.drawString(50, 750, "Factura")
-    p.drawString(50, 700, "ID de Factura: {}".format(factura['id']))
-    p.drawString(50, 680, "Fecha: {}".format(factura['fecha']))
-    p.drawString(50, 660, "Cliente: {}".format(factura['cliente_id']))
-    p.drawString(50, 640, "Total: ${:.2f}".format(float(factura['total'])))
+    # Lista de elementos para el contenido del PDF
+    content = []
 
-    # Finalizar el lienzo (canvas)
-    p.showPage()
-    p.save()
+    # Agregar el encabezado de la factura
+    encabezado = [
+        ['Factura', '', '', ''],
+        ['ID de Factura:', factura['id'], 'Fecha:', factura['fecha']],
+        ['Cliente:', factura['cliente_id'], '', ''],
+    ]
+    content.append(Table(encabezado))
+
+    # Agregar el total de la factura
+    total = [['', '', '', 'Total:', "${:.2f}".format(float(factura['total']))]]
+    content.append(Table(total))
+
+    # Estilo de la tabla de detalles
+    detalles_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 12),
+    ])
+    content[-1].setStyle(detalles_style)
+
+    # Agregar el contenido al documento PDF
+    doc.build(content)
 
     # Reiniciar el buffer y configurar la posición en el inicio
     buffer.seek(0)
 
     # Enviar el archivo PDF como una respuesta de descarga
     # Crear una respuesta Flask con el PDF adjunto
-    response = make_response(send_file(buffer, mimetype='application/pdf'))
+    response = make_response(buffer.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=factura.pdf'
-
+    response.headers['Content-Type'] = 'application/pdf'
     return response
 @app.route('/editar_factura/<factura_id>', methods=['GET', 'POST'])
 def editar_factura(factura_id):
