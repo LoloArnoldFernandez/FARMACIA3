@@ -1,426 +1,447 @@
-from flask import Flask, render_template, request, flash, redirect, make_response, send_file
+from flask import Flask, render_template, request, redirect, make_response
 from flask_bootstrap import Bootstrap
-from flask_sqlalchemy import SQLAlchemy
-import sqlite3
-import pdfkit
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from io import BytesIO
+from reportlab.pdfgen import canvas
+import sqlite3
 app = Flask(__name__)
-app.secret_key = '040518'
-bootstrap=Bootstrap(app)  
+bootstrap=Bootstrap(app)
+#####################USUARIOS###############################
+def registrar_usuario(nombre, apellido, dni, password):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
 
-# Función para obtener todos los clientes desde la base de datos
+    # Insertar los datos del nuevo usuario en la tabla usuarios
+    cursor.execute('INSERT INTO usuarios (nombre, apellido, dni, contraseña) VALUES (?, ?, ?, ?)',
+                   (nombre, apellido, dni, password))
+
+    # Guardar los cambios y cerrar la conexión
+    conn.commit()
+    conn.close()
+
+def verificar_usuario_existente(dni):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Buscar si existe un usuario con el DNI proporcionado
+    cursor.execute('SELECT * FROM usuarios WHERE dni = ?', (dni,))
+    usuario = cursor.fetchone()
+
+    # Cerrar la conexión
+    conn.close()
+
+    # Si se encontró un usuario con el DNI proporcionado, devuelve True; de lo contrario, devuelve False
+    return usuario is not None
+import sqlite3
+
+def verificar_credenciales(dni, password):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Buscar al usuario por su DNI y contraseña
+    cursor.execute('SELECT * FROM usuarios WHERE dni = ? AND contraseña = ?', (dni, password))
+    usuario = cursor.fetchone()
+
+    # Cerrar la conexión
+    conn.close()
+
+    # Si se encontró un usuario con las credenciales proporcionadas, devuelve True; de lo contrario, devuelve False
+    return usuario is not None
+
+
+############################################################
+##############################CLIENTES################################
+
+def obtener_clientes_por_nombre(nombre):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Realizar la consulta para obtener los clientes por nombre
+    cursor.execute("SELECT * FROM clientes WHERE nombre LIKE ?", ('%' + nombre + '%',))
+    clientes = cursor.fetchall()
+
+    # Cerrar la conexión
+    conn.close()
+
+    return clientes
+
+######################################################################
+def obtener_productos_por_nombre(nombre):
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Realizar la consulta para obtener los clientes por nombre
+    cursor.execute("SELECT * FROM productos WHERE nombre LIKE ?", ('%' + nombre + '%',))
+    productos = cursor.fetchall()
+
+    # Cerrar la conexión
+    conn.close()
+
+    return productos
+
+
+
+##############################################
+# Función para calcular el total de la factura
+def calcular_total(cantidad, precio):
+    return cantidad * precio
+
+# Función para obtener la lista de productos
+def obtener_productos():
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT codigo, nombre FROM productos')
+    productos = cursor.fetchall()
+    conn.close()
+    return productos
+
+# Función para obtener la lista de clientes
 def obtener_clientes():
     conn = sqlite3.connect('farmacia.db')
     cursor = conn.cursor()
+    cursor.execute('SELECT id, nombre FROM clientes')
+    clientes = cursor.fetchall()
+    conn.close()
+    return clientes
+
+# Función para obtener la lista de usuarios
+def obtener_usuarios():
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nombre FROM usuarios')
+    usuarios = cursor.fetchall()
+    conn.close()
+    return usuarios
+# Ruta para el inicio de sesión (login)
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Obtener los datos del formulario de inicio de sesión
+        dni = request.form.get('dni')
+        password = request.form.get('password')
+        
+        # Verificar las credenciales del usuario en la base de datos
+        if verificar_credenciales(dni, password):
+            # Si las credenciales son válidas, realizar alguna acción (por ejemplo, redirigir a la página principal)
+            return redirect('/inicio')
+        else: 
+            # Si las credenciales son inválidas, mostrar un mensaje de error
+            error = 'DNI o contraseña incorrectos'
+            return render_template('login.html', error=error)
+    else:
+        # Renderizar la plantilla del formulario de inicio de sesión
+        return render_template('login.html')
+
+# Ruta para el registro de usuario
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        # Obtener los datos del formulario de registro de usuario
+        nombre = request.form.get('nombre')
+        apellido = request.form.get('apellido')
+        dni = request.form.get('dni')
+        password = request.form.get('password')
+        
+        # Verificar si el usuario ya está registrado en la base de datos
+        if verificar_usuario_existente(dni):
+            error = 'El usuario ya está registrado'
+            return render_template('registro.html', error=error)
+        else:
+            # Registrar al nuevo usuario en la base de datos
+            registrar_usuario(nombre, apellido, dni, password)
+            # Realizar alguna acción adicional, como redirigir a la página de inicio de sesión
+            return redirect('/')
+    else:
+        # Renderizar la plantilla del formulario de registro de usuario
+        return render_template('registro.html')
+
+@app.route('/inicio')
+def pagina1():
+    return render_template('home.html')
+
+# Ruta para mostrar todos los clientes
+@app.route('/clientes')
+def mostrar_clientes():
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Obtener todos los clientes de la base de datos
     cursor.execute('SELECT * FROM clientes')
     clientes = cursor.fetchall()
-    conn.close()
-    return clientes
-# ...
 
-def borrar_cliente(cliente_id):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM clientes WHERE id = ?', (cliente_id,))
-    conn.commit()
+    # Cerrar la conexión 
     conn.close()
 
-def actualizar_cliente(cliente_id, nombre, direccion, telefono, correo):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, correo = ? WHERE id = ?',
-                   (nombre, direccion, telefono, correo, cliente_id))
-    conn.commit()
-    conn.close()
+    return render_template('clientes.html', clientes=clientes)
 
-# Función para obtener todos los productos desde la base de datos
-def obtener_productos():
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM productos')
-    productos = cursor.fetchall()
-    conn.close()
-    return productos
-
-#Encontrar productos
-def encontrar_productos(busqueda):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM productos WHERE nombre LIKE ?', ('%' + busqueda + '%',))
-    productos = cursor.fetchall()
-    conn.close()
-    return productos
-
-#actualizar producto
-def actualizar_producto(producto_id, nombre, precio, stock):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE id = ?', (nombre, precio, stock, producto_id))
-    conn.commit()
-    conn.close()
-#Eliminar Producto
-
-def borrar_producto(producto_id):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM productos WHERE id = ?', (producto_id,))
-    conn.commit()
-    conn.close()
-# Función para obtener todas las facturas desde la base de datos
-def obtener_facturas():
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM facturas')
-    facturas = cursor.fetchall()
-    conn.close()
-    return facturas
-
-#dar producto
-def dar_productos(producto_id):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM productos WHERE id = ?', (producto_id,))
-    productos = cursor.fetchone()
-    conn.close()
-    return productos
-
-#dar facturas
-def dar_facturas(factura_id):
-    # Lógica para obtener los datos de la factura con el ID proporcionado desde la base de datos
-    
-    # Ejemplo de conexión a la base de datos
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM facturas WHERE id = ?', (factura_id,))
-       # Ejemplo de consulta SQL para obtener los datos de la factura
-    facturas = cursor.fetchone()
-    
-    # Cerrar la conexión a la base de datos
-    conn.close()
-    
-    return facturas
-
-#dar factura pdf
-def obtener_factura_pdf(factura_id):
-    conn = sqlite3.connect('farmacia.db')  # Conexión a la base de datos
-    cursor = conn.cursor()
-
-    # Obtener los datos de la factura según el ID proporcionado
-    cursor.execute('SELECT * FROM facturas WHERE id = ?', (factura_id,))
-    factura = cursor.fetchone()  # Obtener la primera fila de resultados
-
-    # Cerrar la conexión a la base de datos
-    cursor.close()
-    conn.close()
-
-    # Comprobar si se encontró la factura
-    if factura:
-        # Devolver un diccionario con los datos de la factura
-        factura_dict = {
-            'id': factura[0],
-            'cliente_id': factura[1],
-            'sucursal': factura[2],
-            'fecha': factura[3],
-            'total': factura[4]
-        }
-        return factura_dict
-    else:
-        return None
-
-#borrar factura
-def borrar_factura(factura_id):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM facturas WHERE id = ?', (factura_id,))
-    conn.commit()
-    conn.close()
-
-#actualizar factura
-def actualizar_factura(factura_id, sucursal, fecha, total):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('UPDATE facturas SET sucursal = ?, fecha = ?, total = ? WHERE id = ?', (sucursal, fecha, total, factura_id))
-    conn.commit()
-    conn.close()
-
-
-# Función para guardar un cliente en la base de datos
-def guardar_cliente(nombre, direccion, telefono, correo):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM clientes WHERE nombre = ?', (nombre,))
-    cliente_existente = cursor.fetchone()
-    
-    if cliente_existente:
-        flash('El cliente ya existe', 'error')
-    else:
-        cursor.execute('INSERT INTO clientes (nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?)',
-                       (nombre, direccion, telefono, correo))
-        conn.commit()
-        flash('Cliente agregado correctamente', 'success')
-    
-    conn.close()
-
-# Función para buscar clientes en la base de datos
-def encontrar_clientes(busqueda):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM clientes WHERE nombre LIKE ?', ('%' + busqueda + '%',))
-    clientes = cursor.fetchall()
-    conn.close()
-    return clientes
-#encontrar clientes
-def encontrar_facturas(busqueda):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM facturas WHERE id LIKE ? OR fecha LIKE ?', ('%' + busqueda + '%', '%' + busqueda + '%'))
-    facturas = cursor.fetchall()
-    conn.close()
-    return facturas
-
-def obtener_productos():
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM productos')
-    productos = cursor.fetchall()
-    conn.close()
-    return productos
-
-# Función para guardar un producto en la base de datos
-def guardar_producto(nombre, precio, stock):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)',
-                   (nombre, precio, stock))
-    conn.commit()
-    conn.close()
-
-# Función para guardar una factura en la base de datos
-def guardar_factura(cliente_id, sucursal, fecha, total):
-    conn = sqlite3.connect('farmacia.db')
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO facturas (cliente_id, sucursal, fecha, total) VALUES (?, ?, ?, ?)',
-                   (cliente_id, sucursal, fecha, total))
-    conn.commit()
-    conn.close()
-# Ruta de la página de inicio
-@app.route('/')
-def index():
-    return render_template('index.html', active='inicio')
-
-# Ruta de la página de clientes
-@app.route('/clientes')
-def clientes():
-    clientes = obtener_clientes()  # Función para obtener los clientes desde la base de datos
-    return render_template('clientes.html', active='clientes', clientes=clientes)
-# Ruta para agregar un cliente
-@app.route('/agregar_cliente', methods=['GET', 'POST'])
-def agregar_cliente():
+# Ruta para ingresar un nuevo cliente
+@app.route('/clientes/ingresar', methods=['GET', 'POST'])
+def ingresar_cliente():
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        direccion = request.form['direccion']
-        telefono = request.form['telefono']
-        correo = request.form['correo']
-        guardar_cliente(nombre, direccion, telefono, correo)  # Función para guardar el cliente en la base de datos
+        # Obtener los datos del formulario de ingreso de cliente
+        nombre = request.form.get('nombre')
+        apellido = request.form.get('apellido')
+        dni = request.form.get('dni')
+        direccion = request.form.get('direccion')
+
+        conn = sqlite3.connect('farmacia.db')
+        cursor = conn.cursor()
+
+        # Insertar el nuevo cliente en la base de datos
+        cursor.execute('INSERT INTO clientes (nombre, apellido, dni, dirección) VALUES (?, ?, ?, ?)',
+                       (nombre, apellido, dni, direccion))
+        conn.commit()
+
+        # Cerrar la conexión
+        conn.close()
+
+        # Redirigir a la página de mostrar clientes
         return redirect('/clientes')
-    return render_template('agregar_cliente.html')
+    else:
+        return render_template('ingresar_cliente.html')
 
-# Ruta para buscar clientes
-@app.route('/buscar_cliente', methods=['POST'])
-def buscar_cliente():
-    busqueda = request.form['busqueda']
-    clientes = encontrar_clientes(busqueda)  # Función para buscar clientes en la base de datos
-    return render_template('clientes.html', active='clientes', clientes=clientes)
-#ruta de buscar facturas
-@app.route('/buscar_factura', methods=['POST'])
-def buscar_factura():
-    busqueda = request.form['busqueda']
-    facturas = encontrar_facturas(busqueda)  # Función para buscar facturas en la base de datos
-    return render_template('facturas.html', active='facturas', facturas=facturas)
-
-
-# Ruta para editar un cliente
-@app.route('/editar_cliente/<int:cliente_id>', methods=['GET', 'POST'])
+# Ruta para editar un cliente existente
+@app.route('/clientes/editar/<int:cliente_id>', methods=['GET', 'POST'])
 def editar_cliente(cliente_id):
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        direccion = request.form['direccion']
-        telefono = request.form['telefono']
-        correo = request.form['correo']
-        actualizar_cliente(cliente_id, nombre, direccion, telefono, correo)  # Función para actualizar el cliente en la base de datos
-        flash('Cliente actualizado correctamente', 'success')
+        # Obtener los datos del formulario de edición de cliente
+        nombre = request.form.get('nombre')
+        apellido = request.form.get('apellido')
+        dni = request.form.get('dni')
+        direccion = request.form.get('direccion')
+
+        conn = sqlite3.connect('farmacia.db')
+        cursor = conn.cursor()
+
+        # Actualizar los datos del cliente en la base de datos
+        cursor.execute('UPDATE clientes SET nombre=?, apellido=?, dni=?, dirección=? WHERE id=?',
+                       (nombre, apellido, dni, direccion, cliente_id))
+        conn.commit()
+
+        # Cerrar la conexión
+        conn.close()
+
+        # Redirigir a la página de mostrar clientes
         return redirect('/clientes')
     else:
         conn = sqlite3.connect('farmacia.db')
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM clientes WHERE id = ?', (cliente_id,))
+
+        # Obtener los datos del cliente a editar de la base de datos
+        cursor.execute('SELECT * FROM clientes WHERE id=?', (cliente_id,))
         cliente = cursor.fetchone()
+
+        # Cerrar la conexión
         conn.close()
-        if cliente:
-            return render_template('editar_cliente.html', cliente=cliente)
-        else:
-            flash('Cliente no encontrado', 'error')
-            return redirect('/clientes')
-# Ruta de la página de productos
-@app.route('/productos')
-def productos():
-    productos = obtener_productos()  # Función para obtener los productos desde la base de datos
-    return render_template('productos.html', active='productos', productos=productos)
-#buscar producto
 
-@app.route('/buscar_producto', methods=['POST'])
-def buscar_producto():
-    busqueda = request.form['busqueda']
-    productos = encontrar_productos(busqueda)  # Función para buscar productos en la base de datos
-    return render_template('productos.html', active='productos', productos=productos)
+        return render_template('editar_cliente.html', cliente=cliente)
 
-
-
-# Ruta para eliminar un cliente
-@app.route('/eliminar_cliente/<int:cliente_id>', methods=['POST'])
+# Ruta para eliminar un cliente existente
+@app.route('/clientes/eliminar/<int:cliente_id>', methods=['POST'])
 def eliminar_cliente(cliente_id):
-    borrar_cliente(cliente_id)  # Función para eliminar el cliente de la base de datos
-    flash('Cliente eliminado correctamente', 'success')
-    return redirect('/clientes')
-# Ruta para agregar un producto
-@app.route('/agregar_producto', methods=['GET', 'POST'])
-def agregar_producto():
-    if request.method == 'POST':
-        nombre = request.form['nombre']
-        precio = float(request.form['precio'])
-        stock = int(request.form['stock'])
-        guardar_producto(nombre, precio, stock)  # Función para guardar el producto en la base de datos
-        return redirect('/productos')
-    return render_template('agregar_producto.html', productos=productos)
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
 
-@app.route('/editar_producto/<int:producto_id>', methods=['GET', 'POST'])
+    # Eliminar el cliente de la base de datos
+    cursor.execute('DELETE FROM clientes WHERE id=?', (cliente_id,))
+    conn.commit()
+
+    # Cerrar la conexión
+    conn.close()
+
+    # Redirigir a la página de mostrar clientes
+    return redirect('/clientes')
+
+@app.route('/buscar_cliente', methods=['GET'])
+def buscar_cliente():
+    nombre = request.args.get('nombre')
+    clientes = obtener_clientes_por_nombre(nombre)  # Implementa la lógica para obtener los clientes por nombre
+
+    return render_template('clientes.html', clientes=clientes)
+
+####################################################################################
+
+# Ruta para mostrar todos los productos
+@app.route('/productos')
+def mostrar_productos():
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Obtener todos los productos de la base de datos
+    cursor.execute('SELECT * FROM productos')
+    productos = cursor.fetchall()
+
+    # Cerrar la conexión 
+    conn.close()
+
+    return render_template('productos.html', productos=productos)
+
+# Ruta para ingresar un nuevo producto
+@app.route('/productos/ingresar', methods=['GET', 'POST'])
+def ingresar_producto():
+    if request.method == 'POST':
+        # Obtener los datos del formulario de ingreso de producto
+        nombre = request.form.get('nombre')
+        detalle = request.form.get('detalle')
+        stock = request.form.get('stock')
+        cantidad_vendida = request.form.get('cantidad_vendida')
+        precio = request.form.get('precio')
+
+        conn = sqlite3.connect('farmacia.db')
+        cursor = conn.cursor()
+
+        # Insertar el nuevo producto en la base de datos
+        cursor.execute('INSERT INTO productos (nombre, detalle, stock, cantidad_vendida, precio) VALUES (?, ?, ?, ?, ?)',
+                       (nombre, detalle, stock, cantidad_vendida, precio))
+        conn.commit()
+
+        # Cerrar la conexión
+        conn.close()
+
+        # Redirigir a la página de mostrar productos
+        return redirect('/productos')
+    else:
+        return render_template('ingresar_productos.html')
+
+# Ruta para editar un producto existente
+@app.route('/productos/editar/<int:producto_id>', methods=['GET', 'POST'])
 def editar_producto(producto_id):
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        precio = float(request.form['precio'])
-        stock = int(request.form['stock'])
-        actualizar_producto(producto_id, nombre, precio, stock)  # Función para actualizar el producto en la base de datos
-        flash('Producto actualizado correctamente', 'success')
+        # Obtener los datos del formulario de edición de producto
+        nombre = request.form.get('nombre')
+        detalle = request.form.get('detalle')
+        stock = request.form.get('stock')
+        cantidad_vendida = request.form.get('cantidad_vendida')
+        precio = request.form.get('precio')
+
+        conn = sqlite3.connect('farmacia.db')
+        cursor = conn.cursor()
+
+        # Actualizar los datos del producto en la base de datos
+        cursor.execute('UPDATE productos SET nombre=?, detalle=?, stock=?, cantidad_vendida=?, precio=? WHERE codigo=?',
+                       (nombre, detalle, stock, cantidad_vendida, precio, producto_id))
+        conn.commit()
+
+        # Cerrar la conexión
+        conn.close()
+
+        # Redirigir a la página de mostrar productos
         return redirect('/productos')
     else:
         conn = sqlite3.connect('farmacia.db')
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM productos WHERE id = ?', (producto_id,))
+
+        # Obtener los datos del producto a editar de la base de datos
+        cursor.execute('SELECT * FROM productos WHERE codigo=?', (producto_id,))
         producto = cursor.fetchone()
-        conn.close()
-        #producto = dar_productos(producto_id)  # Función para obtener el producto de la base de datos
-        if producto:
-            return render_template('editar_producto.html', producto=producto)
-        else:
-            flash('Producto no encontrado', 'error')
-            return redirect('/productos')# Ruta para eliminar un producto
-@app.route('/eliminar_producto/<int:producto_id>', methods=['POST'])
+
+        # Cerrar la conexión
+        conn.close() 
+
+        return render_template('editar_producto.html', producto=producto)
+
+# Ruta para eliminar un producto existente
+@app.route('/productos/eliminar/<int:producto_id>', methods=['POST'])
 def eliminar_producto(producto_id):
-    borrar_producto(producto_id)  # Función para eliminar el producto de la base de datos
-    flash('Producto eliminado correctamente', 'success')
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Eliminar el producto de la base de datos
+    cursor.execute('DELETE FROM productos WHERE codigo=?', (producto_id,))
+    conn.commit()
+
+    # Cerrar la conexión
+    conn.close()
+
+    # Redirigir a la página de mostrar productos
     return redirect('/productos')
-# Ruta de la página de facturas
+
+@app.route('/buscar_producto', methods=['GET'])
+def buscar_producto():
+    nombre = request.args.get('nombre')
+    productos = obtener_productos_por_nombre(nombre)  
+
+    return render_template('productos.html', productos=productos)
+
+###################################################################################
+# Ruta para mostrar todas las facturas
 @app.route('/facturas')
-def facturas():
-    facturas = obtener_facturas()  # Función para obtener las facturas desde la base de datos
-    return render_template('facturas.html', active='facturas', facturas=facturas)
-# Ruta para agregar una factura
+def mostrar_facturas():
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
 
-@app.route('/agregar_factura', methods=['GET', 'POST'])
-def agregar_factura():
+    # Obtener todas las facturas de la base de datos
+    cursor.execute('SELECT * FROM facturas')
+    facturas = cursor.fetchall()
+
+    # Cerrar la conexión
+    conn.close()
+
+    return render_template('facturas.html', facturas=facturas)
+
+# Ruta para ingresar una nueva factura
+@app.route('/facturas/ingresar', methods=['GET', 'POST'])
+def ingresar_factura():
     if request.method == 'POST':
-        # Obtener los datos del formulario
-        cliente_id = request.form['cliente']
-        sucursal = request.form['sucursal']
-        fecha = request.form['fecha']
+        # Obtener los datos del formulario de ingreso de factura
+        cliente_id = request.form.get('cliente_id')
+        usuario_id = request.form.get('usuario_id')
+        fecha_factura = request.form.get('fecha_factura')
+        impuestos = float(request.form.get('impuestos'))
+        total = float(request.form.get('total'))
+        producto_id = request.form.get('producto')
+        cantidad_comprada = int(request.form.get('cantidad'))
+        precio_unitario = float(request.form.get('precio'))
         
-        # Obtener los productos seleccionados y calcular el total
-        productos = request.form.getlist('productos')
-        total = sum(float(request.form['precio_' + producto]) for producto in productos)
-        guardar_factura(cliente_id, sucursal, fecha, total)
-        # Lógica para guardar la factura en la base de datos
-        
+        # Calcular el total de la factura
+        subtotal = cantidad_comprada * precio_unitario
+        total = subtotal + impuestos
+
+        conn = sqlite3.connect('farmacia.db')
+        cursor = conn.cursor()
+                # Insertar la nueva factura en la base de datos
+        cursor.execute('INSERT INTO facturas (cliente_id, usuario_id, fecha_factura, producto_id, cantidad_comprada, precio_unitario, impuestos, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                       (cliente_id, usuario_id, fecha_factura, producto_id, cantidad_comprada, precio_unitario, impuestos, total))
+
+        conn.commit()
+
+        # Cerrar la conexión
+        conn.close()
+
+        # Redirigir a la página de mostrar facturas
         return redirect('/facturas')
-    
-    clientes = obtener_clientes()  # Función para obtener los clientes desde la base de datos
-    productos = obtener_productos()  # Función para obtener los productos desde la base de datos
-    
-    return render_template('agregar_factura.html', clientes=clientes, productos=productos)
 
-#descargar factura
-@app.route('/generar_pdf/<factura_id>')
-def generar_pdf(factura_id):
-    factura = obtener_factura_pdf(factura_id)  # Obtener los datos de la factura desde la base de datos
+    productos = obtener_productos()
+    clientes = obtener_clientes()
+    usuarios = obtener_usuarios()
+    total = 0.0
+    return render_template('ingresar_facturas.html', productos=productos, clientes=clientes, usuarios=usuarios)
 
-    # Crear un objeto de BytesIO para almacenar el PDF
-    buffer = BytesIO()
-
-    # Crear el documento PDF
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-
-    # Lista de elementos para el contenido del PDF
-    content = []
-
-    # Agregar el encabezado de la factura
-    encabezado = [
-        ['Factura', '', '', ''],
-        ['ID de Factura:', factura['id'], 'Fecha:', factura['fecha']],
-        ['Cliente:', factura['cliente_id'], '', ''],
-    ]
-    content.append(Table(encabezado))
-
-    # Agregar el total de la factura
-    total = [['', '', '', 'Total:', "${:.2f}".format(float(factura['total']))]]
-    content.append(Table(total))
-
-    # Estilo de la tabla de detalles
-    detalles_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('TOPPADDING', (0, 1), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, -1), (-1, -1), 12),
-    ])
-    content[-1].setStyle(detalles_style)
-
-    # Agregar el contenido al documento PDF
-    doc.build(content)
-
-    # Reiniciar el buffer y configurar la posición en el inicio
-    buffer.seek(0)
-
-    # Enviar el archivo PDF como una respuesta de descarga
-    # Crear una respuesta Flask con el PDF adjunto
-    response = make_response(buffer.getvalue())
-    response.headers['Content-Disposition'] = 'attachment; filename=factura.pdf'
-    response.headers['Content-Type'] = 'application/pdf'
-    return response
-@app.route('/editar_factura/<factura_id>', methods=['GET', 'POST'])
-def editar_factura(factura_id):
-    if request.method == 'POST':
-        sucursal = request.form['sucursal']
-        fecha = request.form['fecha']
-        total = float(request.form['total'])
-        actualizar_factura(factura_id, sucursal, fecha, total)  # Función para actualizar la factura en la base de datos
-        return redirect('/facturas')
-    factura = dar_facturas(factura_id)  # Función para obtener los datos de la factura desde la base de datos
-    return render_template('editar_factura.html', factura=factura)
-
-@app.route('/eliminar_factura/<factura_id>', methods=['POST'])
+# Ruta para eliminar una factura existente.
+@app.route('/facturas/eliminar/<int:factura_id>', methods=['POST'])
 def eliminar_factura(factura_id):
-    borrar_factura(factura_id)  # Función para eliminar la factura de la base de datos
+    conn = sqlite3.connect('farmacia.db')
+    cursor = conn.cursor()
+
+    # Eliminar la factura de la base de datos
+    cursor.execute('DELETE FROM facturas WHERE numero_factura=?', (factura_id,))
+    conn.commit()
+
+    # Cerrar la conexión
+    conn.close()
+
+    # Redirigir a la página de mostrar facturas
     return redirect('/facturas')
-if __name__ == '__main__':
-    app.run()
+
+
+
+
+###################################################################################
+
+
+
+
+
+
+
+if __name__ == '__main__': 
+    app.run(debug=True)

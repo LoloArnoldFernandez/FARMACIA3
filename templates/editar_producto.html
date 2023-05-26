@@ -1,24 +1,39 @@
-{% extends "base.html" %}
-
-{% block title %}Editar Producto{% endblock %}
-
-{% block content %}
-    <h1 class="mt-5">Editar Producto</h1>
-    <form action="/editar_producto/{{ producto.id }}" method="POST">
-        <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ producto.nombre }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="precio" class="form-label">Precio</label>
-            <input type="number" class="form-control" id="precio" name="precio" value="{{ producto.precio }}" step="0.01" required>
-        </div>
-        <div class="mb-3">
-            <label for="stock" class="form-label">Stock</label>
-            <input type="number" class="form-control" id="stock" name="stock" value="{{ producto.stock }}" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editar Producto</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Editar Producto</h1> 
+        <form method="POST" action="/productos/editar/{{ producto[0] }}">
+        <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ producto[1] }}" required>
+            </div>
+        <div class="form-group">
+                <label for="detalle">Detalle:</label>
+                <textarea class="form-control" id="detalle" name="detalle">{{ producto[2] }}</textarea>
+            </div>
+        <div class="form-group">
+                <label for="stock">Stock:</label>
+                <input type="number" class="form-control" id="stock" name="stock" value="{{ producto[3]}}" min="0" required>
+            </div>
+        <div class="form-group">
+                <label for="cantidad_vendida">Cantidad Vendida:</label>
+                <input type="number" class="form-control" id="cantidad_vendida" name="cantidad_vendida" value="{{ producto[4]}}" min="0" required>
+            </div>
+        <div class="form-group">
+                <label for="precio">Precio:</label>
+                <input type="number" class="form-control" id="precio" name="precio" step="0.01" value="{{ producto[5] }}" min="0" required>
+            </div>
+        <button type="submit" class="btn btn-primary">Actualizar</button>
         <a href="/productos" class="btn btn-secondary">Cancelar</a>
-    </form>
-{% endblock %}
+        </form> 
+    </div>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
 

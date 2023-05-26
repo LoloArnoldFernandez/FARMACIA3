@@ -1,30 +1,48 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clientes</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            padding: 40px;
+        }
 
-{% block title %}Clientes{% endblock %}
-
-{% block content %}
-    <h1 class="mt-5">Clientes</h1>
-    <div class="d-flex justify-content-end mb-3">
-        <a href="/agregar_cliente" class="btn btn-primary">Agregar Cliente</a>
+        .container {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
     </div>
-    <form action="/buscar_cliente" method="POST" class="mb-3">
-        <div class="input-group">
-            <input type="text" class="form-control" name="busqueda" placeholder="Buscar cliente...">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </div>
-    </form>
-    <table class="table mt-4">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
+        <a href="/inicio" class="btn btn-primary logout-btn"><i class="fas fa-chevron-left"></i> Atras</a>    </div>
+    <div class="container">
+        <h1>Clientes</h1> 
+        <form method="GET" action="/buscar_cliente" class="from-inline">
+            <div class="form-group mr-2">
+                <input type="text" class="form-control" id="nombre" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+" title="Ingrese un nombre válido">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+            
+        </form>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>DNI</th>
+                    <th>Dirección</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+             <tbody>
             {% for cliente in clientes %}
             <tr>
                 <td>{{ cliente[0] }}</td>
@@ -33,26 +51,20 @@
                 <td>{{ cliente[3] }}</td>
                 <td>{{ cliente[4] }}</td>
                 <td>
-                    <a href="/editar_cliente/{{ cliente[0] }}" class="btn btn-primary btn-sm">Editar</a>
-                    <form action="/eliminar_cliente/{{ cliente[0] }}" method="post" style="display:inline">
+                    <a href="/clientes/editar/{{ cliente[0] }}" class="btn btn-primary btn-sm">Editar</a>
+                        <form action="/clientes/eliminar/{{ cliente[0] }}" method="post" style="display: inline-block;">
                         <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
                     </form>
                 </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="flash-messages">
-                {% for message in messages %}
-                    <li class="flash-message">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-{% endblock %}
+        </tbody>        </table>
 
+        <a href="/clientes/ingresar" class="btn btn-primary">Agregar cliente</a>
+    </div> 
 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
 
 

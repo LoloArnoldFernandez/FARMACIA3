@@ -1,49 +1,71 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Facturas</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            padding: 40px;
+        }
 
-{% block title %}Facturas{% endblock %}
+        .container {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <a href="/inicio" class="btn btn-primary logout-btn"><i class="fas fa-chevron-left"></i> Atras</a>    </div>
+    <div class="container">
+        <h1>Facturas</h1> 
+            <div class="container">
 
-{% block content %}
-    <h1 class="mt-5">Facturas</h1>
-    <div class="d-flex justify-content-end mb-3">
-        <a href="/agregar_factura" class="btn btn-primary">Agregar Facturas</a>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Número de Factura</th>
+                    <th>Cliente</th>
+                    <th>Usuario</th>
+                    <th>Fecha de Factura</th>
+                    <th>Código del Producto</th>
+                    <th>Cantidad Comprada</th>
+                    <th>Precio Unitario</th>
+                    <th>Impuestos</th>
+                    <th>Total</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for factura in facturas %}
+                <tr>
+                    <td>{{ factura[0] }}</td>
+                    <td>{{ factura[1] }}</td>
+                    <td>{{ factura[2] }}</td>
+                    <td>{{ factura[3] }}</td>
+                    <td>{{ factura[4] }}</td>
+                    <td>{{ factura[5] }}</td>
+                    <td>{{ factura[6] }}</td>
+                    <td>{{ factura[7] }}</td>
+                    <td>{{ factura[8] }}</td>
+                    <td>
+                        <form action="/facturas/eliminar/{{ factura[0] }}" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="/facturas/ingresar" class="btn btn-success">Agregar Factura</a>
     </div>
-    <form action="/buscar_factura" method="POST" class="mb-3">
-        <div class="input-group">
-            <input type="text" class="form-control" name="busqueda" placeholder="Buscar Factura...">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </div>
-    </form> 
 
-    <table class="table mt-4">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Cliente</th>
-                <th>Sucursal</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for factura in facturas %}
-            <tr>
-                <td>{{ factura[0] }}</td>
-                <td>{{ factura[1] }}</td>
-                <td>{{ factura[2] }}</td>
-                <td>{{ factura[3] }}</td>
-                <td>{{ factura[4] }}</td>
-                <td>
-                    <a href="/generar_pdf/{{ factura[0] }}" class="btn btn-primary">Descargar</a>
-                    <a href="/editar_factura/{{ factura[0] }}" class="btn btn-primary btn-sm">Editar</a>
-                    <form action="/eliminar_factura/{{ factura[0] }}" method="post" style="display:inline">
-                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% endblock %}
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
 
 

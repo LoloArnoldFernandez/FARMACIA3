@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Editar cliente</title>
+    <title>Ingresar nuevo cliente</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <style>
         body {
@@ -32,32 +32,32 @@
 </head>
 <body>
     <div class="card">
-        <h1>Editar cliente</h1>
-        <form method="POST" action="/clientes/editar/{{ cliente[0] }}" autocomplete="off">
+        <h1>Ingresar nuevo cliente</h1>
+        <form method="POST" action="/clientes/ingresar" autocomplete="off">
             <!-- Agregar atributo autocomplete="off" para deshabilitar el autocompletado de formularios -->
 
             <div class="form-group">
                 <label for="nombre">Nombre:</label>
-                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ cliente[1] }}" required pattern="[A-Za-záéíóúÁÉÍÓÚ\s]+" title="Ingrese un nombre válido sin símbolos">
+                <input type="text" class="form-control" id="nombre" name="nombre" required pattern="[A-Za-záéíóúÁÉÍÓÚ\s]+" title="Ingrese un nombre válido sin símbolos">
                 <!-- Agregar el atributo pattern para permitir solo letras y espacios en blanco -->
                 <!-- Agregar el atributo title para mostrar un mensaje de ayuda cuando el patrón no coincide -->
             </div>
             <div class="form-group">
                 <label for="apellido">Apellido:</label>
-                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ cliente[2] }}" required pattern="[A-Za-záéíóúÁÉÍÓÚ\s]+" title="Ingrese un apellido válido sin símbolos">
+                <input type="text" class="form-control" id="apellido" name="apellido" required pattern="[A-Za-záéíóúÁÉÍÓÚ\s]+" title="Ingrese un apellido válido sin símbolos">
             </div>
             <div class="form-group">
                 <label for="dni">DNI:</label>
-                <input type="text" class="form-control" id="dni" name="dni" value="{{ cliente[3] }}" required pattern="[0-9]{8}" title="Ingrese un DNI válido de 8 dígitos">
+                <input type="text" class="form-control" id="dni" name="dni" required pattern="[0-9]{8}" title="Ingrese un DNI válido de 8 dígitos">
                 <!-- Agregar el atributo pattern para validar que el DNI tenga 8 dígitos -->
                 <!-- Agregar el atributo title para mostrar un mensaje de ayuda cuando el patrón no coincide -->
             </div>
             <div class="form-group">
                 <label for="direccion">Dirección:</label>
-                <input type="text" class="form-control" id="direccion" name="direccion" value="{{ cliente[4] }}" maxlength="100" pattern="[^<>]+">
+                <input type="text" class="form-control" id="direccion" name="direccion" maxlength="100" pattern="[^<>]+">
                 <!-- Agregar el atributo pattern para evitar la entrada de símbolos como < y > -->
             </div>
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
             <a href="/clientes" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Página de inicio</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .container{
+            margin: 0 auto;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+           <div class="container">
+        <div class="jumbotron">
+            <h1 class="display-4"><i class="fas fa-clinic-medical"></i> Farmacia Steven</h1>
+            <p class="lead">Bienvenido al sistema de facturación. Desde aquí podrás gestionar tus facturas, clientes y productos.</p>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card rounded shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title"><i class="fas fa-file-invoice"></i> Facturas</h2>
+                        <p class="card-text">Accede a la gestión de facturas para crear, buscar y ver detalles de las facturas !AQUI!.</p>
+                        <a href="/facturas" class="btn btn-primary">Gestionar Facturas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card rounded shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title"><i class="fas fa-users"></i> Clientes</h2>
+                        <p class="card-text">Accede a la gestión de clientes para crear, buscar y ver detalles de los clientes !AQUI!.</p>
+                        <a href="/clientes" class="btn btn-primary">Gestionar Clientes</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card rounded shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title"><i class="fas fa-box"></i> Productos</h2>
+                        <p class="card-text">Accede a la gestión de productos para crear, buscar y ver detalles de los productos !AQUI!.</p>
+                        <a href="/productos" class="btn btn-primary">Gestionar Productos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <a href="/" class="btn btn-primary logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a>
+    </div>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+</body>
+</html>
+
+
